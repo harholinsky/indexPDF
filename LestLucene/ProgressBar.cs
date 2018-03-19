@@ -17,10 +17,12 @@ public class ProgressBar : IDisposable, IProgress<double>
     private string currentText = string.Empty;
     private bool disposed = false;
     private int animationIndex = 0;
+    private int maxValues = 0;
 
-    public ProgressBar()
+    public ProgressBar(int maxValues)
     {
         timer = new Timer(TimerHandler);
+        this.maxValues = maxValues;
 
         // A progress bar is only for temporary display in a console window.
         // If the console output is redirected to a file, draw nothing.
@@ -33,8 +35,6 @@ public class ProgressBar : IDisposable, IProgress<double>
 
     public void Report(double value)
     {
-        // Make sure value is in [0..1] range
-        value = Math.Max(0, Math.Min(1, value));
         Interlocked.Exchange(ref currentProgress, value);
     }
 
@@ -45,10 +45,9 @@ public class ProgressBar : IDisposable, IProgress<double>
             if (disposed) return;
 
             int progressBlockCount = (int)(currentProgress * blockCount);
-            int percent = (int)(currentProgress * 100);
-            string text = string.Format("[{0}{1}] {2,3}% {3}",
-                new string('#', progressBlockCount), new string('-', blockCount - progressBlockCount),
-                percent,
+            string text = string.Format("{0}/{1} {2}",
+                currentProgress,
+                maxValues,
                 animation[animationIndex++ % animation.Length]);
             UpdateText(text);
 

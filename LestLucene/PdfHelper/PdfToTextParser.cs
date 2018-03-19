@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using LestLucene.PdfHelper.Models;
@@ -12,7 +13,7 @@ namespace LestLucene.PdfHelper
         private static readonly string[] lineSeparators = new string[] { Environment.NewLine, "\n" };
 
 
-        public static string ExtractTextFromPdf(string path)
+        public static PdfText ExtractTextFromPdf(string path)
         {
             using (PdfReader reader = new PdfReader(path))
             {
@@ -23,35 +24,38 @@ namespace LestLucene.PdfHelper
                     text.Append(PdfTextExtractor.GetTextFromPage(reader, i));
                 }
 
-                return text.ToString();
+                return new PdfText
+                {
+                    PdfPath = path,
+                    Text = text.ToString()
+                };
             }
         }
 
 
-        public static List<PdfLineText> ExtractTextLinesFromPdf(string path)
+        public static IEnumerable<PdfLineText> ExtractTextLinesFromPdf(string path)
         {
-            List<PdfLineText> lines = new List<PdfLineText>();
-
             using (PdfReader reader = new PdfReader(path))
             {
 
                 for (int i = 1; i <= reader.NumberOfPages; i++)
                 {
-                    string[] spilittedLines = PdfTextExtractor.GetTextFromPage(reader, i)
+                    string pageText = PdfTextExtractor.GetTextFromPage(reader, i);
+
+                    string[] spilittedLines = pageText
                         .Split(lineSeparators, StringSplitOptions.RemoveEmptyEntries);
 
                     for (int j = 0; j < spilittedLines.Length; j++)
                     {
-                        lines.Add(new PdfLineText
+                        yield return new PdfLineText
                         {
                             LineNumber = j,
                             PageNumber = i,
-                            Text = spilittedLines[j]
-                        });
+                            Text = spilittedLines[j],
+                            PdfPath = path
+                        };
                     }
                 }
-
-                return lines;
             }
         }
 
@@ -66,7 +70,8 @@ namespace LestLucene.PdfHelper
                     lines.Add(new PdfPageText
                     {
                         PageNumber = i,
-                        Text = PdfTextExtractor.GetTextFromPage(reader, i)
+                        Text = PdfTextExtractor.GetTextFromPage(reader, i),
+                        PdfPath = path
                     });
                 }
 

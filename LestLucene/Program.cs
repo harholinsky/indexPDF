@@ -1,5 +1,6 @@
 ﻿using iTextSharp.text;
 using LestLucene.IndexFolder;
+using LestLucene.IndexFolder.Models;
 using LestLucene.PdfHelper;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
@@ -48,12 +49,13 @@ namespace LestLucene
                 Usage();
                 return;
             }
-            else if (!args.Contains("-indexedDir") || string.IsNullOrWhiteSpace(indexedDir)) {
+            else if (!args.Contains("-indexedDir") || string.IsNullOrWhiteSpace(indexedDir))
+            {
                 Console.WriteLine("-indexedDir \"Path\" is required");
                 Usage();
                 return;
             }
-            else if (args.Contains("-index") 
+            else if (args.Contains("-index")
                 && (!args.Contains("-dirToIndex") || string.IsNullOrWhiteSpace(dirToIndex)))
             {
                 Console.WriteLine("-dirToIndex is missed");
@@ -69,7 +71,8 @@ namespace LestLucene
             #endregion
 
 
-            if (args.Contains("-index")) {
+            if (args.Contains("-index"))
+            {
                 IndexFolder(dirToIndex, indexedDir);
             }
             else if (args.Contains("-search"))
@@ -77,7 +80,7 @@ namespace LestLucene
                 Search(indexedDir, searchPattern);
             }
         }
-        
+
 
         private static void IndexFolder(string pathToFolder, string pathIndex)
         {
@@ -95,7 +98,7 @@ namespace LestLucene
 
             new Thread(() =>
             {
-                using (var progress = new ProgressBar())
+                using (var progress = new ProgressBar(pdfFiles.Length))
                 {
                     Console.WriteLine($"Indexing {pdfFiles.Length} files:");
                     while (!tokenSource.IsCancellationRequested)
@@ -105,36 +108,33 @@ namespace LestLucene
                             continue;
                         }
 
-                        progress.Report(pdfFiles.Length * 100 / indexedCount);
+                        progress.Report(indexedCount);
                         Thread.Sleep(20);
                     }
                 }
             }).Start();
-
-
-            List<Task> tasks = new List<Task>();
-
+                                    
             using (var writer = IndexHelper.CreateWriter(new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30), pathIndex))
             {
                 writer.DeleteAll();
 
                 foreach (var file in pdfFiles)
                 {
-                    tasks.Add(Task.Factory.StartNew(() => {
-                        var lines = PdfToTextParser.ExtractTextLinesFromPdf(file);
+                    try
+                    {
+                        var items = PdfToTextParser.ExtractTextLinesFromPdf(file);
 
-                        foreach (var line in lines)
+                        foreach (var item in items)
                         {
-                            lock (locker)
-                                writer.AddDocument(line.ToDocument());
+                            writer.AddDocument(item.ToDocument());
                         }
-
-                        lock (locker)
-                            indexedCount++;
-                    }, TaskCreationOptions.LongRunning));
+                    }
+                    finally
+                    {
+                        indexedCount++;
+                    }
                 }
-
-                Task.WaitAll(tasks.ToArray());
+                
                 tokenSource.Cancel(true);
             }
 
@@ -158,7 +158,7 @@ namespace LestLucene
                 Console.WriteLine("----------------------");
 
                 var doc = searcher.Doc(scoreDoc.Doc);
-                
+
                 Console.WriteLine("Field name\t|\t\tField value");
 
                 var fields = doc.GetFields();
