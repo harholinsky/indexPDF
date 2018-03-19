@@ -35,47 +35,60 @@ namespace LestLucene.PdfHelper
 
         public static IEnumerable<PdfLineText> ExtractTextLinesFromPdf(string path)
         {
-            using (PdfReader reader = new PdfReader(path))
+            PdfReader reader = null;
+
+            try
             {
+                reader = new PdfReader(path);
+            }
+            catch
+            {
+                yield break;
+            }
 
-                for (int i = 1; i <= reader.NumberOfPages; i++)
+            for (int i = 1; i <= reader.NumberOfPages; i++)
+            {
+                string pageText = PdfTextExtractor.GetTextFromPage(reader, i);
+
+                string[] spilittedLines = pageText
+                    .Split(lineSeparators, StringSplitOptions.RemoveEmptyEntries);
+
+                for (int j = 0; j < spilittedLines.Length; j++)
                 {
-                    string pageText = PdfTextExtractor.GetTextFromPage(reader, i);
-
-                    string[] spilittedLines = pageText
-                        .Split(lineSeparators, StringSplitOptions.RemoveEmptyEntries);
-
-                    for (int j = 0; j < spilittedLines.Length; j++)
+                    yield return new PdfLineText
                     {
-                        yield return new PdfLineText
-                        {
-                            LineNumber = j,
-                            PageNumber = i,
-                            Text = spilittedLines[j],
-                            PdfPath = path
-                        };
-                    }
+                        LineNumber = j,
+                        PageNumber = i,
+                        Text = spilittedLines[j],
+                        PdfPath = path
+                    };
                 }
             }
+
+            reader.Close();
         }
 
-        public static List<PdfPageText> ExtractTextPagesFromPdf(string path)
+        public static IEnumerable<PdfPageText> ExtractTextPagesFromPdf(string path)
         {
-            List<PdfPageText> lines = new List<PdfPageText>();
+            PdfReader reader = null;
 
-            using (PdfReader reader = new PdfReader(path))
+            try
             {
-                for (int i = 1; i <= reader.NumberOfPages; i++)
+                reader = new PdfReader(path);
+            }
+            catch
+            {
+                yield break;
+            }
+            
+            for (int i = 1; i <= reader.NumberOfPages; i++)
+            {
+                yield return new PdfPageText
                 {
-                    lines.Add(new PdfPageText
-                    {
-                        PageNumber = i,
-                        Text = PdfTextExtractor.GetTextFromPage(reader, i),
-                        PdfPath = path
-                    });
-                }
-
-                return lines;
+                    PageNumber = i,
+                    Text = PdfTextExtractor.GetTextFromPage(reader, i),
+                    PdfPath = path
+                };
             }
         }
     }
