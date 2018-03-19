@@ -134,7 +134,8 @@ namespace LestLucene
                         indexedCount++;
                     }
                 }
-                
+
+                writer.Optimize();
                 tokenSource.Cancel(true);
             }
 
