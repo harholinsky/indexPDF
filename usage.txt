@@ -1,0 +1,6 @@
+1) open cmd
+2) execute command cd "current folder path"
+3)
+LestLucene.exe -index -dirToIndex "Path to directory which should be indexed" -indexedDir "path where save indexed data"
+
+LestLucene.exe -search "string to search" -indexedDir "path where saves index data"
