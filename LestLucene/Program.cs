@@ -5,6 +5,7 @@ using LestLucene.PdfHelper;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -85,7 +86,7 @@ namespace LestLucene
         private static void IndexFolder(string pathToFolder, string pathIndex)
         {
             int indexedCount = 0;
-            object locker = new object();
+            int MAX_PARALLEL_TASKS_COUNT = Environment.ProcessorCount * 5;
             long timeStart = DateTime.Now.Ticks;
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -96,48 +97,47 @@ namespace LestLucene
                 return;
             }
 
-            new Thread(() =>
-            {
-                using (var progress = new ProgressBar(pdfFiles.Length))
-                {
-                    Console.WriteLine($"Indexing {pdfFiles.Length} files:");
-                    while (!tokenSource.IsCancellationRequested)
-                    {
-                        if (indexedCount == 0)
-                        {
-                            continue;
-                        }
+            Console.WriteLine($"Indexing {pdfFiles.Length} pdf files:");
+            var progress = new ProgressBar(pdfFiles.Length);
+            progress.Report(0);
 
-                        progress.Report(indexedCount);
-                        Thread.Sleep(20);
-                    }
-                }
-            }).Start();
-                                    
+            var tasks = new List<Task>();
+
             using (var writer = IndexHelper.CreateWriter(new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30), pathIndex))
             {
                 writer.DeleteAll();
 
                 foreach (var file in pdfFiles)
                 {
-                    try
+                    if (tasks.Count >= MAX_PARALLEL_TASKS_COUNT)
                     {
-                        var items = PdfToTextParser.ExtractTextLinesFromPdf(file);
+                        int finishedIndex = Task.WaitAny(tasks.ToArray());
+                        tasks.RemoveAt(finishedIndex);
+                    }
 
-                        foreach (var item in items)
-                        {
-                            writer.AddDocument(item.ToDocument());
-                        }
-                    }
-                    finally
+                    tasks.Add(Task.Factory.StartNew(() =>
                     {
-                        indexedCount++;
-                    }
+                        try
+                        {
+                            var items = PdfToTextParser.ExtractTextLinesFromPdf(file);
+
+                            foreach (var item in items)
+                            {
+                                writer.AddDocument(item.ToDocument());
+                            }
+                        }
+                        finally
+                        {
+                            progress.Report(indexedCount++);
+                        }
+                    }));
                 }
 
                 writer.Optimize();
                 tokenSource.Cancel(true);
             }
+
+            Task.WaitAll(tasks.ToArray());
 
             long timeEnd = DateTime.Now.Ticks;
 
@@ -154,15 +154,16 @@ namespace LestLucene
 
             Console.WriteLine($"Found {topDocs.ScoreDocs.Length} results");
 
+            Console.WriteLine("Field name\t|\t\tField value");
+
             foreach (var scoreDoc in topDocs.ScoreDocs)
             {
-                Console.WriteLine("----------------------");
-
                 var doc = searcher.Doc(scoreDoc.Doc);
-
-                Console.WriteLine("Field name\t|\t\tField value");
-
                 var fields = doc.GetFields();
+
+                if (fields.Count > 0)
+                    Console.WriteLine("----------------------");
+
                 foreach (var field in fields)
                 {
                     Console.WriteLine($"{field.Name}\t\t|\t\t{field.StringValue}");
