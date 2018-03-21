@@ -5,7 +5,7 @@ using System.Threading;
 /// <summary>
 /// An ASCII progress bar
 /// </summary>
-public class ProgressBar : IDisposable, IProgress<double>
+public class ProgressBar : IDisposable
 {
     private const int blockCount = 10;
     private readonly TimeSpan animationInterval = TimeSpan.FromSeconds(1.0 / 8);
@@ -25,12 +25,7 @@ public class ProgressBar : IDisposable, IProgress<double>
         this.maxValues = maxValues;
 
         // A progress bar is only for temporary display in a console window.
-        // If the console output is redirected to a file, draw nothing.
-        // Otherwise, we'll end up with a lot of garbage in the target file.
-        if (!Console.IsOutputRedirected)
-        {
-            ResetTimer();
-        }
+        ResetTimer();
     }
 
     public void Report(double value)

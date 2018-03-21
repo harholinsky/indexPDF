@@ -14,11 +14,11 @@ namespace LestLucene.PdfHelper.Models
             var result = new Document();
 
             result.Add(new Field("id",
-                $"{Path.GetFileNameWithoutExtension(PdfPath)}",
+                string.Format("{0}", Path.GetFileNameWithoutExtension(PdfPath)),
                 Field.Store.YES,
                 Field.Index.NO));
 
-            result.Add(new Field("t", $"{PdfPath}", Field.Store.YES, Field.Index.NO));
+            result.Add(new Field("t", string.Format("{0}", PdfPath), Field.Store.YES, Field.Index.NO));
             result.Add(new Field("v", Text, Field.Store.YES, Field.Index.ANALYZED));
             
             return result;

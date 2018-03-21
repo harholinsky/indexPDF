@@ -93,11 +93,11 @@ namespace LestLucene
             string[] pdfFiles = Directory.GetFiles(pathToFolder, "*.pdf", SearchOption.AllDirectories);
             if (pdfFiles.Length == 0)
             {
-                Console.WriteLine($"Cant find any *.pdf file in folder \"{pathToFolder}\"");
+                Console.WriteLine(string.Format("Cant find any *.pdf file in folder \"{0}\"", pathToFolder));
                 return;
             }
 
-            Console.WriteLine($"Indexing {pdfFiles.Length} pdf files:");
+            Console.WriteLine(string.Format("Indexing {0} pdf files:", pdfFiles.Length));
             var progress = new ProgressBar(pdfFiles.Length);
             progress.Report(0);
 
@@ -133,15 +133,15 @@ namespace LestLucene
                     }));
                 }
 
+                Task.WaitAll(tasks.ToArray());
                 writer.Optimize();
                 tokenSource.Cancel(true);
             }
 
-            Task.WaitAll(tasks.ToArray());
 
             long timeEnd = DateTime.Now.Ticks;
 
-            Console.WriteLine($"SUCCESS [Work time is {(timeEnd - timeStart) / TimeSpan.TicksPerSecond} seconds]");
+            Console.WriteLine(string.Format("SUCCESS [Work time is {0} seconds]", (timeEnd - timeStart) / TimeSpan.TicksPerSecond));
         }
 
         private static void Search(string pathIndex, string searchPattern)
@@ -152,7 +152,7 @@ namespace LestLucene
 
             var topDocs = IndexHelper.Search(pathIndex, searchPattern, out searcher);
 
-            Console.WriteLine($"Found {topDocs.ScoreDocs.Length} results");
+            Console.WriteLine(string.Format("Found {0} results", topDocs.ScoreDocs.Length));
 
             Console.WriteLine("Field name\t|\t\tField value");
 
@@ -166,13 +166,13 @@ namespace LestLucene
 
                 foreach (var field in fields)
                 {
-                    Console.WriteLine($"{field.Name}\t\t|\t\t{field.StringValue}");
+                    Console.WriteLine(string.Format("{0}\t\t|\t\t{1}", field.Name, field.StringValue));
                 }
             }
 
             long timeEnd = DateTime.Now.Ticks;
 
-            Console.WriteLine($"SUCCESS [Work time is {(timeEnd - timeStart) / TimeSpan.TicksPerSecond} seconds]");
+            Console.WriteLine(string.Format("SUCCESS [Work time is {0} seconds]", (timeEnd - timeStart) / TimeSpan.TicksPerSecond));
         }
 
         private static void Usage()

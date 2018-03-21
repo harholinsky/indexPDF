@@ -1,18 +1,13 @@
 ﻿using LestLucene.IndexFolder.Models;
 using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
-using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Lucene.Net.Store;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Lucene.Net.Index.IndexReader;
 
 namespace LestLucene.IndexFolder
 {
@@ -68,7 +63,7 @@ namespace LestLucene.IndexFolder
             var reader = DirectoryReader.Open(directory, readOnly: true);
 
             var parser = new MultiFieldQueryParser(Lucene.Net.Util.Version.LUCENE_30, 
-                reader.GetFieldNames(FieldOption.ALL).ToArray(), 
+                reader.GetFieldNames(IndexReader.FieldOption.ALL).ToArray(), 
                 analyzer);
 
             var searcher = new IndexSearcher(directory);
@@ -88,7 +83,7 @@ namespace LestLucene.IndexFolder
             var reader = DirectoryReader.Open(directory, readOnly: true);
 
             var parser = new MultiFieldQueryParser(Lucene.Net.Util.Version.LUCENE_30,
-                reader.GetFieldNames(FieldOption.ALL).ToArray(),
+                reader.GetFieldNames(IndexReader.FieldOption.ALL).ToArray(),
                 analyzer);
 
             searcher = new IndexSearcher(directory);

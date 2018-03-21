@@ -15,12 +15,12 @@ namespace LestLucene.PdfHelper.Models
         {
             var result = new Document();
 
-            result.Add(new Field("id", 
-                $"{Path.GetFileNameWithoutExtension(PdfPath)}-{PageNumber}-{LineNumber}",
+            result.Add(new Field("id",
+                string.Format("{0}-{1}-{2}", Path.GetFileNameWithoutExtension(PdfPath), PageNumber, LineNumber),
                 Field.Store.YES,
                 Field.Index.NO));
 
-            result.Add(new Field("t", $"{PdfPath}|{PageNumber}", Field.Store.YES, Field.Index.NO));
+            result.Add(new Field("t", string.Format("{0}|{1}", PdfPath, PageNumber), Field.Store.YES, Field.Index.NO));
 
             result.Add(new Field("PageNum", PageNumber + "", Field.Store.YES, Field.Index.NO));
             result.Add(new Field("LineNum", LineNumber + "", Field.Store.YES, Field.Index.NO));
