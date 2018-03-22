@@ -2,6 +2,7 @@
 using LestLucene.IndexFolder;
 using LestLucene.IndexFolder.Models;
 using LestLucene.PdfHelper;
+using LestLucene.PdfHelper.Models;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Search;
 using System;
@@ -17,6 +18,8 @@ namespace LestLucene
 {
     class Program
     {
+        private static readonly int MAX_PARALLEL_TASKS_COUNT = Environment.ProcessorCount * 5;
+
         static void Main(string[] args)
         {
             #region data parsing/validation
@@ -86,7 +89,6 @@ namespace LestLucene
         private static void IndexFolder(string pathToFolder, string pathIndex)
         {
             int indexedCount = 0;
-            int MAX_PARALLEL_TASKS_COUNT = Environment.ProcessorCount * 5;
             long timeStart = DateTime.Now.Ticks;
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -101,40 +103,26 @@ namespace LestLucene
             var progress = new ProgressBar(pdfFiles.Length);
             progress.Report(0);
 
-            var tasks = new List<Task>();
-
-            using (var writer = IndexHelper.CreateWriter(new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30), pathIndex))
+            using (var pdfIndexer = new PdfIndexer(pathIndex, true))
             {
-                writer.DeleteAll();
+                var tasks = new List<Task>();
 
                 foreach (var file in pdfFiles)
                 {
-                    if (tasks.Count >= MAX_PARALLEL_TASKS_COUNT)
+                    try
                     {
-                        int finishedIndex = Task.WaitAny(tasks.ToArray());
-                        tasks.RemoveAt(finishedIndex);
+                        tasks.Add(Task.Factory.StartNew(() =>
+                        {
+                            pdfIndexer.IndexPdfFile(file, PdfIndexTypes.ByLine);
+                        }));
+                    }
+                    finally
+                    {
+                        progress.Report(indexedCount++);
                     }
 
-                    tasks.Add(Task.Factory.StartNew(() =>
-                    {
-                        try
-                        {
-                            var items = PdfToTextParser.ExtractTextLinesFromPdf(file);
-
-                            foreach (var item in items)
-                            {
-                                writer.AddDocument(item.ToDocument());
-                            }
-                        }
-                        finally
-                        {
-                            progress.Report(indexedCount++);
-                        }
-                    }));
                 }
-
                 Task.WaitAll(tasks.ToArray());
-                writer.Optimize();
                 tokenSource.Cancel(true);
             }
 

@@ -54,6 +54,8 @@
   <ItemGroup>
     <Compile Include="IndexFolder\IndexHelper.cs" />
     <Compile Include="IndexFolder\Models\IIndexable.cs" />
+    <Compile Include="PdfHelper\MD5Helper.cs" />
+    <Compile Include="PdfHelper\Models\PdfIndexer.cs" />
     <Compile Include="PdfHelper\Models\PdfText.cs" />
     <Compile Include="PdfHelper\Models\PdfPageText.cs" />
     <Compile Include="PdfHelper\Models\PdfLineText.cs" />

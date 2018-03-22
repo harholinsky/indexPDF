@@ -13,6 +13,7 @@ namespace LestLucene.IndexFolder
 {
     public class IndexHelper
     {
+
         #region Index writing
 
         public static IndexWriter CreateWriter(Analyzer analyzer, string pathToWriteIndexes)
@@ -62,8 +63,8 @@ namespace LestLucene.IndexFolder
 
             var reader = DirectoryReader.Open(directory, readOnly: true);
 
-            var parser = new MultiFieldQueryParser(Lucene.Net.Util.Version.LUCENE_30, 
-                reader.GetFieldNames(IndexReader.FieldOption.ALL).ToArray(), 
+            var parser = new MultiFieldQueryParser(Lucene.Net.Util.Version.LUCENE_30,
+                reader.GetFieldNames(IndexReader.FieldOption.ALL).ToArray(),
                 analyzer);
 
             var searcher = new IndexSearcher(directory);
@@ -88,7 +89,7 @@ namespace LestLucene.IndexFolder
 
             searcher = new IndexSearcher(directory);
             Query query = parser.Parse(searchPattern);
-            
+
             return searcher.Search(query, reader.MaxDoc);
         }
 
