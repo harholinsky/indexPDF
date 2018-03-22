@@ -18,7 +18,7 @@ namespace LestLucene
 {
     class Program
     {
-        private static readonly int MAX_PARALLEL_TASKS_COUNT = Environment.ProcessorCount * 5;
+        
 
         static void Main(string[] args)
         {
@@ -88,44 +88,22 @@ namespace LestLucene
 
         private static void IndexFolder(string pathToFolder, string pathIndex)
         {
-            int indexedCount = 0;
             long timeStart = DateTime.Now.Ticks;
-            CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-            string[] pdfFiles = Directory.GetFiles(pathToFolder, "*.pdf", SearchOption.AllDirectories);
-            if (pdfFiles.Length == 0)
-            {
-                Console.WriteLine(string.Format("Cant find any *.pdf file in folder \"{0}\"", pathToFolder));
-                return;
-            }
+            int filesCount = Directory.GetFiles(pathToFolder, "*.pdf", SearchOption.AllDirectories).Length;
 
-            Console.WriteLine(string.Format("Indexing {0} pdf files:", pdfFiles.Length));
-            var progress = new ProgressBar(pdfFiles.Length);
+            Console.WriteLine(string.Format("Indexing {0} pdf files:", filesCount));
+
+            int indexedfilesCount = 0;
+            var progress = new ProgressBar(filesCount);
             progress.Report(0);
 
-            using (var pdfIndexer = new PdfIndexer(pathIndex, true))
+            var indexer = new PdfIndexer(pathIndex);
+            indexer.FileIndexed += delegate (object sender, IndexedFile file)
             {
-                var tasks = new List<Task>();
-
-                foreach (var file in pdfFiles)
-                {
-                    try
-                    {
-                        tasks.Add(Task.Factory.StartNew(() =>
-                        {
-                            pdfIndexer.IndexPdfFile(file, PdfIndexTypes.ByLine);
-                        }));
-                    }
-                    finally
-                    {
-                        progress.Report(indexedCount++);
-                    }
-
-                }
-                Task.WaitAll(tasks.ToArray());
-                tokenSource.Cancel(true);
-            }
-
+                progress.Report(indexedfilesCount++);
+            };
+            indexer.IndexPdfFilesFromFolder(pathToFolder, PdfIndexTypes.ByPage);
 
             long timeEnd = DateTime.Now.Ticks;
 
@@ -136,17 +114,16 @@ namespace LestLucene
         {
             long timeStart = DateTime.Now.Ticks;
 
-            IndexSearcher searcher = null;
+            var indexer = new PdfIndexer(pathIndex);
 
-            var topDocs = IndexHelper.Search(pathIndex, searchPattern, out searcher);
+            var foundDocs = indexer.SearchPdfByText(searchPattern);
 
-            Console.WriteLine(string.Format("Found {0} results", topDocs.ScoreDocs.Length));
+            Console.WriteLine(string.Format("Found {0} results", foundDocs.Count()));
 
             Console.WriteLine("Field name\t|\t\tField value");
 
-            foreach (var scoreDoc in topDocs.ScoreDocs)
+            foreach (var doc in foundDocs.Take(10))
             {
-                var doc = searcher.Doc(scoreDoc.Doc);
                 var fields = doc.GetFields();
 
                 if (fields.Count > 0)

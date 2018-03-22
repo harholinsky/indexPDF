@@ -20,6 +20,7 @@ namespace LestLucene.IndexFolder
         {
             var dir = new DirectoryInfo(pathToWriteIndexes);
             var mmapDir = new MMapDirectory(dir);
+            
 
             return new IndexWriter(mmapDir, analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
         }
@@ -27,6 +28,7 @@ namespace LestLucene.IndexFolder
         public static void WriteIndex(IIndexable toIdnex, IndexWriter writer)
         {
             writer.AddDocument(toIdnex.ToDocument());
+            writer.Commit();
         }
 
         public static void WriteIndex(IEnumerable<IIndexable> toIdnex, IndexWriter writer)

@@ -14,7 +14,7 @@ namespace LestLucene.PdfHelper.Models
             var result = new Document();
 
             result.Add(new Field("PdtPath", PdfPath, Field.Store.YES, Field.Index.NO));
-            result.Add(new Field("Text", Text, Field.Store.YES, Field.Index.ANALYZED));
+            result.Add(new Field("Text", Text, Field.Store.NO, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS));
 
             return result;
         }
